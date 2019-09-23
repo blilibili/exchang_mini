@@ -1,0 +1,125 @@
+<script>
+    import {Page} from '@wxa/core';
+
+    @Page
+    export default class ExchangeIndex {
+        data = {
+            rate: '',
+            krwInput: '',
+            cnyInput: '',
+            krwRate: '',
+            costMoney: 0
+        }
+        async onLoad() {
+            let result = await this.requestGetRate()
+
+            this.setData({
+                rate: parseFloat(parseFloat(1 / parseFloat((result.data.rate / 100).toFixed(4))).toFixed(4)),
+                krwRate: parseFloat(parseFloat(result.data.rate) / 100).toFixed(4)
+            })
+        }
+
+        async setCnyAmount(e){
+            let rate = parseFloat(this.data.rate)
+            let inputPrice = parseFloat(e.detail.value)
+            let changePrice = parseFloat(inputPrice * rate).toFixed(4)
+            this.setData({
+                krwInput: changePrice
+            })
+        }
+
+        async setKrwAmount(e){
+            let rate = parseFloat(this.data.krwRate)
+            let inputKrwPrice = parseFloat(e.detail.value)
+            let changeKrwPrice = inputKrwPrice * rate
+            this.setData({
+                cnyInput: parseFloat(changeKrwPrice).toFixed(4)
+            })
+        }
+
+        async requestGetRate(){
+            return await this.$fetch('http://120.79.206.5:9002/getRate', {}, {}, 'post')
+        }
+        async foo() {
+
+        }
+    }
+</script>
+
+<config>
+    {
+    "navigationBarTitleText": "汇率"
+    }
+</config>
+
+<template>
+    <view class="page">
+        <view class="header-section" style="height: 90rpx;margin: 0 auto 10px auto;">
+            <view style="font-weight: bold;">
+                今日汇率 (人民币 -> 韩元)
+            </view>
+            <view class="account-input-block" style="color: #FF0000;">
+                1 : {{rate}}
+            </view>
+        </view>
+        <view class="header-section" style="height: 200rpx;margin: 0 auto 10px auto;">
+            <view style="font-weight: bold;">
+                汇率转换 (人民币 -> 韩元)
+            </view>
+            <view class="account-input-block">
+                <view style="width: 100rpx;">汇率</view>
+                <view style="display: flex;align-items: center;width: 260rpx;">
+                    <view style="width: 55%;">
+                        <input type="number" value="{{cnyInput}}" bindblur="setCnyAmount" class="input-common" placeholder="请输入金额" />
+                    </view>
+                    <view>(人民币)</view>
+                </view>
+                <view style="margin: 0 10rpx;">
+                    <image src="../../image/arrow.png" mode="widthFix" style="width: 30rpx;height: 30rpx;"></image>
+                </view>
+                <view style="display: flex;align-items: center;width: 240rpx;">
+                    <view style="width: 65%;">
+                        <input type="number" value="{{krwInput}}" bindblur="setKrwAmount" class="input-common" placeholder="请输入金额" />
+                    </view>
+                    <view>(韩元)</view>
+                </view>
+            </view>
+
+            <view>
+                <button type="primary" bindtap="setDisabled" size="mini">确认购买</button>
+            </view>
+        </view>
+
+        <view class="header-section" style="height: 90rpx;margin: 0 auto;">
+            <view style="font-weight: bold;">
+                已花费金额
+            </view>
+            <view class="account-input-block" style="color: #FF0000;">
+                {{costMoney}}
+            </view>
+        </view>
+    </view>
+</template>
+
+<style lang="scss">
+    @import "../common";
+    .page {
+        width: 100%;
+        height: 100%;
+        background-color: #f2f2f2;
+        padding-top: 20rpx;
+    }
+    .header-section{
+        background-color: white;
+        border-radius: 4px;
+        padding: 10px;
+        width: 90%;
+        font-size: 14px;
+        /*margin: 0 auto;*/
+    }
+    .account-input-block{
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+    }
+</style>

@@ -1,0 +1,38 @@
+<script>
+import {App} from '@wxa/core';
+
+@App
+export default class Main {
+    globalData = {
+        userInfo: 'Genuifx',
+    }
+}
+</script>
+
+<config>
+{
+    "pages": [
+        "pages/index",
+        "pages/exchange/index"
+    ],
+    "tabBar": {
+        "list": [
+            {
+                "pagePath": "pages/index",
+                "text": "首页"
+            },
+            {
+                "pagePath": "pages/exchange/index",
+                "text": "汇率"
+            }
+        ]
+    }
+}
+</config>
+
+<style lang="scss">
+page {
+    width: 100%;
+    height: 100%;
+}
+</style>

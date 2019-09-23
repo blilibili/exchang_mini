@@ -1,0 +1,32 @@
+{
+    "name": "exchange",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "dev": "wxa2 build --watch",
+        "build": "cross-env NODE_ENV=production wxa2 build --no-cache"
+    },
+    "keywords": [
+        "wxa",
+        "basic",
+        "template"
+    ],
+    "author": "",
+    "license": "MIT",
+    "devDependencies": {
+        "@babel/runtime": "^7.3.1",
+        "@wxa/plugin-replace": "^2.0.0",
+        "@wxa/plugin-uglifyjs": "^2.0.0",
+        "babel-eslint": "^8.2.3",
+        "cross-env": "^5.1.6",
+        "eslint": "^4.19.1",
+        "eslint-config-google": "^0.9.1",
+        "eslint-plugin-vue": "^4.5.0",
+        "vue-eslint-parser": "^3.2.2"
+    },
+    "dependencies": {
+        "@wxa/core": "^2.0.0",
+        "regenerator-runtime": "^0.13.1"
+    }
+}
