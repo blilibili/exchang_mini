@@ -3,17 +3,37 @@ import {Page} from '@wxa/core';
 
 @Page
 export default class Index {
-    async onLoad() {
-        console.log(this);
-        console.log(`hello ${this.$app.globalData.userInfo}, this is wxa page`);
+    data = {
+        canIUse: false,
+        userName: '',
+        avatarUrl: ''
+    }
+    onLoad() {
+        wx.getUserInfo({
+            success: (res) => {
+                this.setData({
+                    canIUse: true,
+                    userName: res.userInfo.nickName,
+                    avatarUrl: res.userInfo.avatarUrl
+                })
+            },
+            error: (res) => {
+                console.log(res)
+            }
+        })
+    }
 
-        let slogan = await this.foo();
-
-        console.log(slogan);
+    bindGetUserInfo(val){
+        let tmp = val.detail
+        this.setData({
+            canIUse: true,
+            userName: tmp.userInfo.nickName,
+            avatarUrl: tmp.userInfo.avatarUrl
+        })
     }
 
     async foo() {
-        return await Promise.resolve('Hey, Async/Await is usabled');
+
     }
 }
 </script>
@@ -26,8 +46,12 @@ export default class Index {
 
 <template>
 <view class="page">
-    <view class="animated pulse">
-        hello, this is wxa!
+    <view>
+        <view>欢迎{{userName}}使用汇率转换工具</view>
+        <view style="margin-top: 10px;text-align: center;">
+            <button wx:if="{{!canIUse}}" open-type="getUserInfo" bindgetuserinfo="bindGetUserInfo">请先登录</button>
+            <image wx:if="{{canIUse}}" src="{{avatarUrl}}" style="width: 100rpx;height: 100rpx;border-radius: 34px;border: 1px solid lightgrey;padding: 3px;"></image>
+        </view>
     </view>
 </view>
 </template>

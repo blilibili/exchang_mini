@@ -3,8 +3,13 @@ import {App} from '@wxa/core';
 
 @App
 export default class Main {
+    onLaunch (){
+
+    }
     globalData = {
-        userInfo: 'Genuifx',
+        userInfo: '',
+        isLogin: false,
+        avatarUrl: ''
     }
 }
 </script>
@@ -16,14 +21,19 @@ export default class Main {
         "pages/exchange/index"
     ],
     "tabBar": {
+        "selectedColor": "#1296db",
         "list": [
             {
                 "pagePath": "pages/index",
-                "text": "首页"
+                "text": "首页",
+                "iconPath": "./image/home.png",
+                "selectedIconPath": "./image/home-selected.png"
             },
             {
                 "pagePath": "pages/exchange/index",
-                "text": "汇率"
+                "text": "汇率",
+                "iconPath": "./image/coin.png",
+                "selectedIconPath": "./image/coin-selected.png"
             }
         ]
     }

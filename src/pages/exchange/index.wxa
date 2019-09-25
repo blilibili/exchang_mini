@@ -1,5 +1,5 @@
 <script>
-    import {Page} from '@wxa/core';
+    import {Page , toast} from '@wxa/core';
 
     @Page
     export default class ExchangeIndex {
@@ -8,10 +8,38 @@
             krwInput: '',
             cnyInput: '',
             krwRate: '',
-            costMoney: 0
+            costMoney: 0,
+            userName: '',
+            isCanUse: false,
+            costRecordList: [],
+            isCanClick: true
         }
-        async onLoad() {
+        startInput(){
+            this.setData({
+                isCanClick: false
+            })
+        }
+        async onShow() {
+            wx.getUserInfo({
+                success: (res) => {
+                    this.setData({
+                        userName: res.userInfo.nickName,
+                        isCanUse: true
+                    })
+
+                    this.queryMyShopRecord()
+                },
+                fail: (res) => {
+                    toast('请先登录再使用')
+                    setTimeout(() => {
+                        this.$router.switch('/pages/index')
+                    } , 1500)
+                }
+            })
+
             let result = await this.requestGetRate()
+
+            wx.hideLoading()
 
             this.setData({
                 rate: parseFloat(parseFloat(1 / parseFloat((result.data.rate / 100).toFixed(4))).toFixed(4)),
@@ -23,25 +51,108 @@
             let rate = parseFloat(this.data.rate)
             let inputPrice = parseFloat(e.detail.value)
             let changePrice = parseFloat(inputPrice * rate).toFixed(4)
-            this.setData({
-                krwInput: changePrice
-            })
+
+            if(changePrice !== 'NaN'){
+                this.setData({
+                    krwInput: changePrice,
+                    cnyInput: inputPrice,
+                    isCanClick: true
+                })
+            }
         }
 
         async setKrwAmount(e){
             let rate = parseFloat(this.data.krwRate)
             let inputKrwPrice = parseFloat(e.detail.value)
-            let changeKrwPrice = inputKrwPrice * rate
-            this.setData({
-                cnyInput: parseFloat(changeKrwPrice).toFixed(4)
-            })
+            let changeKrwPrice = parseFloat(inputKrwPrice * rate).toFixed(4)
+            if(changeKrwPrice !== 'NaN'){
+                this.setData({
+                    krwInput: inputKrwPrice,
+                    cnyInput: changeKrwPrice,
+                    isCanClick: true
+                })
+            }
         }
 
         async requestGetRate(){
-            return await this.$fetch('http://120.79.206.5:9002/getRate', {}, {}, 'post')
+            wx.showLoading({
+                title: '加载中',
+            })
+            return await this.$fetch('https://dan.samxiao.cn/exchange/getRate', {}, {}, 'post')
         }
         async foo() {
 
+        }
+
+        insertIntoRecord(){
+            let submitData = {
+                username: this.data.userName,
+                amount: parseFloat(this.data.cnyInput),
+                time: this.$utils.formatDate(Date.now())
+            }
+            if(submitData.amount === ''){
+                return
+            }
+            wx.showLoading({
+                title: '加载中',
+            })
+            this.$fetch('https://dan.samxiao.cn/exchange/add/consumption', submitData, {}, 'post').then((res) => {
+                wx.hideLoading()
+                if(res.data.code === 0){
+                    toast('记录成功')
+                    this.queryMyShopRecord()
+                }else{
+                    toast('系统异常')
+                }
+            })
+        }
+
+        queryMyShopRecord(){
+            let paramData = {
+                username: this.data.userName
+            }
+            let allAmount = 0
+            wx.showLoading({
+                title: '加载中',
+            })
+            this.$fetch('https://dan.samxiao.cn/exchange/query/consumption', paramData, {}, 'post').then((res) => {
+                wx.hideLoading()
+                if(res.data.code === 0){
+                    // 汇总花费总额
+                    res.data.data.forEach((v , k) => {
+                        allAmount = parseFloat(allAmount) + parseFloat(v.amount)
+                    })
+                    this.setData({
+                        costMoney: parseFloat(allAmount).toFixed(4),
+                        costRecordList: res.data.data
+                    })
+                }else{
+                    toast('系统异常')
+                }
+            })
+        }
+
+        delRecord(e){
+            let time = e.currentTarget.dataset.time
+            let username = this.data.userName
+
+            let paramData = {
+                time: time,
+                username: username
+            }
+            wx.showLoading({
+                title: '加载中',
+            })
+            this.$fetch('https://dan.samxiao.cn/exchange/del/consumption', paramData, {}, 'post').then((res) => {
+                wx.hideLoading()
+                if(res.data.code === 0){
+                    // 汇总花费总额
+                    toast('删除成功')
+                    this.queryMyShopRecord()
+                }else{
+                    toast('系统异常')
+                }
+            })
         }
     }
 </script>
@@ -66,31 +177,31 @@
             <view style="font-weight: bold;">
                 汇率转换 (人民币 -> 韩元)
             </view>
-            <view class="account-input-block">
-                <view style="width: 100rpx;">汇率</view>
+            <view class="account-input-block" style="margin-top:10rpx;">
+                <view style="width: 70rpx;">汇率</view>
                 <view style="display: flex;align-items: center;width: 260rpx;">
-                    <view style="width: 55%;">
-                        <input type="number" value="{{cnyInput}}" bindblur="setCnyAmount" class="input-common" placeholder="请输入金额" />
+                    <view style="width: 58%;">
+                        <input type="number" value="{{cnyInput}}" bindfocus="startInput" bindblur="setCnyAmount" class="input-common" placeholder="请输入金额" />
                     </view>
                     <view>(人民币)</view>
                 </view>
                 <view style="margin: 0 10rpx;">
                     <image src="../../image/arrow.png" mode="widthFix" style="width: 30rpx;height: 30rpx;"></image>
                 </view>
-                <view style="display: flex;align-items: center;width: 240rpx;">
+                <view style="display: flex;align-items: center;width: 280rpx;">
                     <view style="width: 65%;">
-                        <input type="number" value="{{krwInput}}" bindblur="setKrwAmount" class="input-common" placeholder="请输入金额" />
+                        <input type="number" value="{{krwInput}}" bindfocus="startInput" bindblur="setKrwAmount" class="input-common" placeholder="请输入金额" />
                     </view>
                     <view>(韩元)</view>
                 </view>
             </view>
 
-            <view>
-                <button type="primary" bindtap="setDisabled" size="mini">确认购买</button>
+            <view style="margin-top:10px;" wx:if="{{isCanUse}}">
+                <button disabled="{{!isCanClick}}" type="primary" size="mini" bindtap="insertIntoRecord">确认记录</button>
             </view>
         </view>
 
-        <view class="header-section" style="height: 90rpx;margin: 0 auto;">
+        <view class="header-section" style="height: 90rpx;margin: 0 auto 10px auto;">
             <view style="font-weight: bold;">
                 已花费金额
             </view>
@@ -98,6 +209,25 @@
                 {{costMoney}}
             </view>
         </view>
+
+        <scroll-view class="header-section" style="height: 623rpx;margin: 0 auto 10px auto;overflow: auto;">
+            <view style="font-weight: bold;">
+                花费列表
+            </view>
+            <view wx:for="{{costRecordList}}" wx:key="*">
+                <view style="display: flex;justify-content: space-between;align-items: center;margin-top: 10rpx;">
+                    <view style="width: 200rpx;overflow: hidden;text-overflow:ellipsis;white-space:nowrap;">
+                        金额: {{item.amount}} 元
+                    </view>
+                    <view style="width: 270rpx;overflow: hidden;text-overflow:ellipsis;white-space:nowrap;">
+                        时间: {{item.times}}
+                    </view>
+                    <view>
+                        <button type="primary" size="mini" data-time="{{item.times}}" bindtap="delRecord">删除</button>
+                    </view>
+                </view>
+            </view>
+        </scroll-view>
     </view>
 </template>
 
@@ -105,9 +235,10 @@
     @import "../common";
     .page {
         width: 100%;
-        height: 100%;
+        height: 98vh;
         background-color: #f2f2f2;
         padding-top: 20rpx;
+        overflow: hidden;
     }
     .header-section{
         background-color: white;
